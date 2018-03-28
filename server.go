@@ -1,9 +1,17 @@
 package main
 
 import (
-	"github.com/labstack/echo"
+	"io"
 	"net/http"
+	"os"
+
+	"github.com/labstack/echo"
 )
+
+type User struct {
+	Name  string `json:"name" form:"name" query:"name"`
+	Email string `json:"email" form:"email" query:"email"`
+}
 
 func main() {
 	e := echo.New()
@@ -20,6 +28,10 @@ func main() {
 
 	// If you are posting values from form, example is in save function.
 	e.POST("/save", save)
+	e.POST("/save/avatar", saveAvatar)
+
+	// Add new data using with structure.
+	e.POST("/users", addUser)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
@@ -42,4 +54,46 @@ func save(c echo.Context) error {
 	name := c.FormValue("name")
 	email := c.FormValue("email")
 	return c.String(http.StatusOK, "name:"+name+", email:"+email)
+}
+
+func saveAvatar(c echo.Context) error {
+	// Get name from form value
+	name := c.FormValue("name")
+
+	// Get avatar things
+	avatar, err := c.FormFile("avatar")
+	if err != nil {
+		return err
+	}
+
+	// Source
+	src, err := avatar.Open()
+	if err != nil {
+		return err
+	}
+	// Set Close function to src, because src is file object and it should be closed when func is returned
+	defer src.Close()
+
+	// Destination
+	dest, err := os.Create(avatar.Filename)
+	if err != nil {
+		return err
+	}
+	// Set Close function to dest, same reason as src should be closed.
+	defer src.Close()
+
+	// Copy
+	if _, err = io.Copy(dest, src); err != nil {
+		return err
+	}
+
+	return c.String(http.StatusOK, "<b>Thank you! "+name+"</b>")
+}
+
+func addUser(c echo.Context) error {
+	u := new(User)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	return c.JSON(http.StatusCreated, u)
 }
