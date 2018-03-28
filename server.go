@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"io"
 	"net/http"
 	"os"
@@ -13,14 +14,24 @@ type User struct {
 	Email string `json:"email" form:"email" query:"email"`
 }
 
-func main() {
-	e := echo.New()
-	// e.GET("/", func(c echo.Context) error {
-	// 	return c.String(http.StatusOK, "Hello, World!")
-	// })
+type Template struct {
+	templates *template.Template
+}
 
-	// Reading staic file, like when you want to render static html file, you can use File method.
-	e.File("/", "static/index.html")
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+func main() {
+	t := &Template{
+		templates: template.Must(template.ParseGlob("public/views/*.html")),
+	}
+
+	e := echo.New()
+	e.Renderer = t
+
+	// Render html file
+	e.GET("/", index)
 
 	// You can route with REST METHODS, like e.GET or e.POST, e.PUT, e.DELETE.
 	// For example, we route getUser method with GET method.
@@ -99,4 +110,8 @@ func addUser(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, u)
+}
+
+func index(c echo.Context) error {
+	return c.Render(http.StatusOK, "hello", "World")
 }
