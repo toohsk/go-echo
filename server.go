@@ -15,9 +15,12 @@ type User struct {
 
 func main() {
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+	// e.GET("/", func(c echo.Context) error {
+	// 	return c.String(http.StatusOK, "Hello, World!")
+	// })
+
+	// Reading staic file, like when you want to render static html file, you can use File method.
+	e.File("/", "static/index.html")
 
 	// You can route with REST METHODS, like e.GET or e.POST, e.PUT, e.DELETE.
 	// For example, we route getUser method with GET method.
